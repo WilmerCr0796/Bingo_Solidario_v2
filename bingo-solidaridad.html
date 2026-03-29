@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo de Solidaridad</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #1565C0;
+    --blue-dark: #0D47A1;
+    --blue-light: #42A5F5;
+    --gold: #FFD600;
+    --white: #ffffff;
+    --gray: #f0f4f8;
+    --red: #e53935;
+    --green: #2e7d32;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans', sans-serif;
+    background: linear-gradient(135deg, #0a1628 0%, #1a237e 50%, #0a1628 100%);
+    min-height: 100vh;
+    color: white;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    text-align: center;
+    padding: 24px 16px 16px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+  }
+  header h1 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(24px, 5vw, 48px);
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,214,0,0.5), 2px 2px 0 rgba(0,0,0,0.5);
+  }
+  header p {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 4px;
+  }
+
+  /* ===== TABS ===== */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 10px 22px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .tab-btn.active, .tab-btn:hover {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #0a1628;
+  }
+
+  /* ===== VIEWS ===== */
+  .view { display: none; padding: 16px; }
+  .view.active { display: block; }
+
+  /* ===== GAME VIEW ===== */
+  .game-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-gold { background: var(--gold); color: #0a1628; }
+  .btn-red { background: var(--red); color: white; }
+  .btn-green { background: var(--green); color: white; }
+  .btn-blue { background: var(--blue); color: white; }
+
+  .ball-display {
+    text-align: center;
+    margin: 0 auto 20px;
+    max-width: 400px;
+  }
+  .current-ball {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #fff 0%, var(--gold) 40%, #e65100 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 52px;
+    color: #0a1628;
+    margin: 0 auto 12px;
+    box-shadow: 0 8px 32px rgba(255,214,0,0.4), inset 0 -4px 8px rgba(0,0,0,0.2);
+    animation: pop 0.3s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .ball-letter {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+  }
+  .balls-called {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    margin-top: 10px;
+  }
+  .mini-ball {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: white;
+    flex-shrink: 0;
+  }
+  .mini-ball.B { background: #1565C0; }
+  .mini-ball.I { background: #e53935; }
+  .mini-ball.N { background: #2e7d32; }
+  .mini-ball.G { background: #e65100; }
+  .mini-ball.O { background: #6a1b9a; }
+
+  .stats-bar {
+    text-align: center;
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 12px;
+  }
+
+  /* ===== CARDS GRID ===== */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ===== BINGO CARD ===== */
+  .card-wrapper {
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .card-wrapper:hover { transform: scale(1.02); }
+  .card-wrapper.winner { animation: winner-pulse 1s infinite; }
+  @keyframes winner-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,214,0,0.7); }
+    50% { box-shadow: 0 0 0 16px rgba(255,214,0,0); }
+  }
+
+  .bingo-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 4px solid var(--blue-dark);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    font-family: 'Noto Sans', sans-serif;
+  }
+
+  .card-header-bingo {
+    background: var(--blue);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    text-align: center;
+  }
+  .card-header-bingo span {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(18px, 4vw, 28px);
+    color: white;
+    padding: 8px 0;
+    letter-spacing: 2px;
+    border-right: 2px solid rgba(255,255,255,0.2);
+  }
+  .card-header-bingo span:last-child { border-right: none; }
+
+  .card-body {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+
+  .cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(14px, 3vw, 22px);
+    font-weight: 900;
+    color: var(--blue-dark);
+    border: 1px solid #cce0ff;
+    transition: background 0.2s;
+    position: relative;
+    min-height: 44px;
+  }
+  .cell.free {
+    background: var(--blue-light);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .cell.marked {
+    background: var(--blue);
+    color: white;
+  }
+  .cell.marked::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: rgba(255,214,0,0.35);
+    border: 2px solid var(--gold);
+  }
+
+  .card-footer {
+    background: var(--blue);
+    padding: 6px 10px;
+    text-align: center;
+    color: white;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .card-footer .event-name {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--gold);
+  }
+  .card-number-badge {
+    position: absolute;
+    top: -1px;
+    right: 6px;
+    background: var(--gold);
+    color: #0a1628;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 0 0 6px 6px;
+  }
+
+  /* ===== SINGLE CARD VIEW ===== */
+  .single-card-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .single-card-view .bingo-card {
+    max-width: 360px;
+    width: 100%;
+  }
+  .single-card-view .cell {
+    font-size: clamp(20px, 5vw, 32px);
+    min-height: 60px;
+  }
+  .single-card-view .card-header-bingo span {
+    font-size: clamp(22px, 5vw, 36px);
+    padding: 12px 0;
+  }
+  .single-card-view .cell.marked::after {
+    inset: 6px;
+  }
+
+  /* ===== SELECTOR ===== */
+  .card-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .card-selector select {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 2px solid var(--gold);
+    background: rgba(0,0,0,0.4);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .card-selector select option { background: #0a1628; }
+
+  /* ===== PRINT ===== */
+  .print-controls {
+    text-align: center;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .print-controls label {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+  }
+  .print-controls input[type=number] {
+    width: 70px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid var(--gold);
+    background: rgba(0,0,0,0.4);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  /* ===== WINNER OVERLAY ===== */
+  .winner-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  .winner-overlay.show { display: flex; }
+  .winner-overlay h2 {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 64px;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(255,214,0,0.8);
+    animation: bounce 0.5s infinite alternate;
+  }
+  @keyframes bounce {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+  }
+  .confetti-emoji { font-size: 80px; animation: spin 1s linear infinite; }
+  @keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+  @media print {
+    body { background: white !important; }
+    header, .tabs, .game-controls, .print-controls, .btn { display: none !important; }
+    .bingo-card { box-shadow: none; page-break-inside: avoid; }
+    .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎱 BINGO DE SOLIDARIDAD</h1>
+  <p>A favor de Cecilia Tepan · Comunidad San Francisco de Totorillas</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('game')">🎲 Sortear Números</button>
+  <button class="tab-btn" onclick="showTab('single')">🃏 Ver Tabla</button>
+  <button class="tab-btn" onclick="showTab('all')">📋 Todas las Tablas</button>
+  <button class="tab-btn" onclick="showTab('print')">🖨️ Imprimir</button>
+</div>
+
+<!-- ===== GAME VIEW ===== -->
+<div id="view-game" class="view active">
+  <div class="ball-display">
+    <div class="ball-letter" id="ball-letter">— — — — —</div>
+    <div class="current-ball" id="current-ball">?</div>
+    <div class="stats-bar" id="stats-bar">0 de 75 números sorteados</div>
+    <div class="balls-called" id="balls-called"></div>
+  </div>
+  <div class="game-controls">
+    <button class="btn btn-gold" onclick="drawBall()">🎱 Sacar Número</button>
+    <button class="btn btn-red" onclick="resetGame()">🔄 Reiniciar Juego</button>
+    <button class="btn btn-green" onclick="verifyAllCards()">✅ Verificar Ganadores</button>
+  </div>
+</div>
+
+<!-- ===== SINGLE CARD VIEW ===== -->
+<div id="view-single" class="view">
+  <div class="card-selector">
+    <label>Tabla #</label>
+    <select id="card-select" onchange="showSingleCard(this.value)"></select>
+  </div>
+  <div class="single-card-view" id="single-card-container"></div>
+</div>
+
+<!-- ===== ALL CARDS VIEW ===== -->
+<div id="view-all" class="view">
+  <div style="text-align:center; margin-bottom:16px; font-size:14px; color:rgba(255,255,255,0.7)">
+    200 tablas únicas · Haz clic en una para verla en grande
+  </div>
+  <div class="cards-grid" id="all-cards-grid"></div>
+</div>
+
+<!-- ===== PRINT VIEW ===== -->
+<div id="view-print" class="view">
+  <div class="print-controls">
+    <label>Desde tabla #</label>
+    <input type="number" id="print-from" value="1" min="1" max="200">
+    <label>hasta #</label>
+    <input type="number" id="print-to" value="200" min="1" max="200">
+    <button class="btn btn-blue" onclick="printCards()">🖨️ Imprimir</button>
+    <button class="btn btn-gold" onclick="generatePrintView()">👁️ Vista previa</button>
+  </div>
+  <div class="cards-grid" id="print-grid" style="max-width:900px;margin:0 auto;"></div>
+</div>
+
+<!-- Winner Overlay -->
+<div class="winner-overlay" id="winner-overlay" onclick="this.classList.remove('show')">
+  <div class="confetti-emoji">🎉</div>
+  <h2>¡BINGO!</h2>
+  <p id="winner-text" style="font-size:22px; color:white;"></p>
+  <p style="font-size:14px; color:rgba(255,255,255,0.6)">(Toca para cerrar)</p>
+</div>
+
+<script>
+// ===== CONFIG =====
+const EVENT = {
+  name: 'Bingo de Solidaridad',
+  beneficiary: 'A favor de Cecilia Tepan',
+  place: 'Comunidad San Francisco de Totorillas',
+  date: 'Sábado 28 de marzo de 2026',
+  time: '7 pm',
+  price: '$5 Toda la Noche'
+};
+
+const COLS = {
+  B: [1,15],
+  I: [16,30],
+  N: [31,45],
+  G: [46,60],
+  O: [61,75]
+};
+const LETTERS = ['B','I','N','G','O'];
+
+// ===== STATE =====
+let allCards = [];
+let calledBalls = [];
+let remaining = [];
+
+// ===== GENERATE CARDS =====
+function randRange(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function shuffle(arr) {
+  for(let i = arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function generateCard(num) {
+  const numbers = [];
+  LETTERS.forEach((l, ci) => {
+    const [min, max] = COLS[l];
+    const pool = [];
+    for(let n=min; n<=max; n++) pool.push(n);
+    shuffle(pool);
+    const col = pool.slice(0,5);
+    if(ci === 2) col[2] = null; // FREE center
+    numbers.push(col);
+  });
+  return { num, numbers, marked: Array.from({length:5}, ()=>Array(5).fill(false)) };
+}
+
+function initCards() {
+  allCards = [];
+  for(let i=1; i<=200; i++) allCards.push(generateCard(i));
+}
+
+// ===== RENDER CARD =====
+function renderCard(card, compact = true, interactive = false) {
+  const div = document.createElement('div');
+  div.className = 'bingo-card';
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'card-header-bingo';
+  LETTERS.forEach(l => {
+    const s = document.createElement('span');
+    s.textContent = l;
+    hdr.appendChild(s);
+  });
+  div.appendChild(hdr);
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  // Build grid row by row
+  for(let r=0; r<5; r++) {
+    for(let c=0; c<5; c++) {
+      const val = card.numbers[c][r];
+      const cell = document.createElement('div');
+      const isFree = (c===2 && r===2);
+      cell.className = 'cell' + (isFree ? ' free' : '');
+      if(isFree) {
+        cell.textContent = 'FREE';
+      } else {
+        cell.textContent = val;
+      }
+      // Mark if called
+      if(!isFree && calledBalls.includes(val)) {
+        cell.classList.add('marked');
+      }
+      if(card.marked && card.marked[c][r]) {
+        cell.classList.add('marked');
+      }
+      if(interactive && !isFree) {
+        cell.onclick = () => {
+          card.marked[c][r] = !card.marked[c][r];
+          cell.classList.toggle('marked');
+        };
+      }
+      body.appendChild(cell);
+    }
+  }
+  div.appendChild(body);
+
+  // Footer
+  const footer = document.createElement('div');
+  footer.className = 'card-footer';
+  footer.innerHTML = `
+    <div class="event-name">${EVENT.name}</div>
+    <div>${EVENT.beneficiary}</div>
+    <div>${EVENT.date} / ${EVENT.time} &nbsp;·&nbsp; ${EVENT.price}</div>
+    <div>${EVENT.place}</div>
+  `;
+  div.appendChild(footer);
+
+  return div;
+}
+
+function renderCardWrapper(card, compact=true) {
+  const wrap = document.createElement('div');
+  wrap.className = 'card-wrapper';
+  wrap.style.position = 'relative';
+
+  const badge = document.createElement('div');
+  badge.className = 'card-number-badge';
+  badge.textContent = '#' + card.num;
+  wrap.appendChild(badge);
+
+  const cardEl = renderCard(card, compact, false);
+  wrap.appendChild(cardEl);
+
+  wrap.onclick = () => {
+    document.getElementById('card-select').value = card.num;
+    showSingleCard(card.num);
+    showTab('single');
+  };
+  return wrap;
+}
+
+// ===== ALL CARDS GRID =====
+function populateAllCards() {
+  const grid = document.getElementById('all-cards-grid');
+  grid.innerHTML = '';
+  allCards.forEach(card => {
+    grid.appendChild(renderCardWrapper(card));
+  });
+}
+
+// ===== SINGLE CARD =====
+function populateSelect() {
+  const sel = document.getElementById('card-select');
+  for(let i=1; i<=200; i++) {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = 'Tabla #' + i;
+    sel.appendChild(o);
+  }
+}
+
+function showSingleCard(num) {
+  const card = allCards[num-1];
+  const cont = document.getElementById('single-card-container');
+  cont.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.style.position = 'relative';
+  const badge = document.createElement('div');
+  badge.className = 'card-number-badge';
+  badge.textContent = '#' + card.num;
+  wrap.appendChild(badge);
+  wrap.appendChild(renderCard(card, false, true));
+  cont.appendChild(wrap);
+
+  // Add nav buttons
+  const nav = document.createElement('div');
+  nav.style.cssText = 'display:flex;gap:10px;';
+  if(num > 1) {
+    const prev = document.createElement('button');
+    prev.className = 'btn btn-blue';
+    prev.textContent = '◀ Anterior';
+    prev.onclick = () => { document.getElementById('card-select').value=num-1; showSingleCard(num-1); };
+    nav.appendChild(prev);
+  }
+  if(num < 200) {
+    const next = document.createElement('button');
+    next.className = 'btn btn-blue';
+    next.textContent = 'Siguiente ▶';
+    next.onclick = () => { document.getElementById('card-select').value=+num+1; showSingleCard(+num+1); };
+    nav.appendChild(next);
+  }
+  cont.appendChild(nav);
+}
+
+// ===== GAME =====
+function initBalls() {
+  remaining = [];
+  for(let n=1; n<=75; n++) remaining.push(n);
+  shuffle(remaining);
+  calledBalls = [];
+}
+
+function getBallLetter(n) {
+  if(n<=15) return 'B';
+  if(n<=30) return 'I';
+  if(n<=45) return 'N';
+  if(n<=60) return 'G';
+  return 'O';
+}
+
+function drawBall() {
+  if(remaining.length === 0) {
+    alert('¡Se han sorteado todos los números!');
+    return;
+  }
+  const n = remaining.pop();
+  calledBalls.push(n);
+  const letter = getBallLetter(n);
+
+  // Animate
+  const ballEl = document.getElementById('current-ball');
+  ballEl.style.animation = 'none';
+  ballEl.offsetHeight; // reflow
+  ballEl.style.animation = 'pop 0.3s ease';
+  ballEl.textContent = n;
+  document.getElementById('ball-letter').textContent = letter + '  —  ' + n;
+
+  // Stats
+  document.getElementById('stats-bar').textContent =
+    `${calledBalls.length} de 75 números sorteados`;
+
+  // Mini balls
+  const cont = document.getElementById('balls-called');
+  const mb = document.createElement('div');
+  mb.className = 'mini-ball ' + letter;
+  mb.textContent = n;
+  cont.prepend(mb);
+
+  // Update all cards view if visible
+  if(document.getElementById('view-all').classList.contains('active')) {
+    populateAllCards();
+  }
+  if(document.getElementById('view-single').classList.contains('active')) {
+    const sel = document.getElementById('card-select');
+    if(sel.value) showSingleCard(sel.value);
+  }
+}
+
+function resetGame() {
+  if(!confirm('¿Reiniciar el juego? Se borrarán todos los números sorteados.')) return;
+  initBalls();
+  document.getElementById('current-ball').textContent = '?';
+  document.getElementById('ball-letter').textContent = '— — — — —';
+  document.getElementById('stats-bar').textContent = '0 de 75 números sorteados';
+  document.getElementById('balls-called').innerHTML = '';
+  // Reset manual marks
+  allCards.forEach(c => c.marked = Array.from({length:5}, ()=>Array(5).fill(false)));
+  if(document.getElementById('view-all').classList.contains('active')) populateAllCards();
+}
+
+function checkBingo(card) {
+  const called = new Set(calledBalls);
+  const nums = card.numbers;
+
+  const isMarked = (c, r) => {
+    if(c===2 && r===2) return true; // FREE
+    return called.has(nums[c][r]);
+  };
+
+  // Rows
+  for(let r=0; r<5; r++) {
+    if([0,1,2,3,4].every(c => isMarked(c,r))) return true;
+  }
+  // Cols
+  for(let c=0; c<5; c++) {
+    if([0,1,2,3,4].every(r => isMarked(c,r))) return true;
+  }
+  // Diagonals
+  if([0,1,2,3,4].every(i => isMarked(i,i))) return true;
+  if([0,1,2,3,4].every(i => isMarked(i,4-i))) return true;
+
+  return false;
+}
+
+function verifyAllCards() {
+  if(calledBalls.length === 0) {
+    alert('Primero sortea algunos números.');
+    return;
+  }
+  const winners = allCards.filter(c => checkBingo(c));
+  if(winners.length === 0) {
+    alert('Ninguna tabla tiene Bingo aún.');
+  } else {
+    const nums = winners.map(c => '#' + c.num).join(', ');
+    document.getElementById('winner-text').textContent = `¡Tabla(s) ganadora(s): ${nums}!`;
+    document.getElementById('winner-overlay').classList.add('show');
+  }
+}
+
+// ===== PRINT =====
+function generatePrintView() {
+  const from = parseInt(document.getElementById('print-from').value);
+  const to = parseInt(document.getElementById('print-to').value);
+  const grid = document.getElementById('print-grid');
+  grid.innerHTML = '';
+  for(let i=from; i<=to; i++) {
+    const w = renderCardWrapper(allCards[i-1], true);
+    grid.appendChild(w);
+  }
+}
+
+function printCards() {
+  generatePrintView();
+  setTimeout(() => window.print(), 300);
+}
+
+// ===== TABS =====
+function showTab(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  event.target.classList.add('active');
+
+  if(id === 'all' && document.getElementById('all-cards-grid').children.length === 0) {
+    populateAllCards();
+  }
+  if(id === 'single' && document.getElementById('single-card-container').children.length === 0) {
+    showSingleCard(1);
+  }
+  if(id === 'print' && document.getElementById('print-grid').children.length === 0) {
+    generatePrintView();
+  }
+}
+
+// ===== INIT =====
+initCards();
+initBalls();
+populateSelect();
+</script>
+</body>
+</html>
